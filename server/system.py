@@ -2,6 +2,8 @@ from quart import Quart, render_template, websocket
 from server import dec
 import json
 
+client_websockets = set()
+
 async def router(ws, data):
     try:
         func_name = data.get("type", "")
@@ -18,7 +20,13 @@ def response_data(data, response):
     response["type"] = data.get("type", "")
     return str(json.dumps(response))
 
+async def broadcast(data):
+    for ws in client_websockets:
+        await ws.send(data)
+
 @dec.websocket("send_message")
 async def send_message(ws, data):
     message = data.get("message", "")
-    await ws.send(response_data(data, {"message": message}))
+    await broadcast(response_data(data, {"message": message}))
+    # await ws.send(response_data(data, {"message": message}))
+

@@ -11,6 +11,7 @@ async def hello():
 
 async def receiving():
     while True:
+        # 受け取ったデータを処理
         data = await websocket.receive()
         json_data = json.loads(data)
         await system.router(websocket, json_data)
@@ -18,10 +19,13 @@ async def receiving():
 @app.websocket("/ws")
 async def ws():
     try:
+        # 受け取る関数を並行実行
+        system.client_websockets.add(websocket._get_current_object())
         consumer = asyncio.create_task(receiving())
         await asyncio.gather(consumer)
     except asyncio.CancelledError:
         # Handle disconnection here
+        system.client_websockets.remove(websocket._get_current_object())
         raise
 
 if __name__ == '__main__':
